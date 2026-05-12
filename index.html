@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Аудиоплеер | Play/Pause + Прогресс + Таймер</title>
+  <!-- Material Icons от Google Fonts -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(145deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 1.5rem;
+      transition: background 0.3s ease;
+    }
+
+    .player-wrapper {
+      width: 100%;
+      max-width: 700px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 4rem;
+      padding: 3rem 2rem;
+      box-shadow: 0 30px 55px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .play-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 1.2rem 0 1.5rem;
+    }
+
+    .play-btn {
+      background: rgba(20, 20, 35, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 50%;
+      width: clamp(100px, 22vw, 150px);
+      height: clamp(100px, 22vw, 150px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 0 10px rgba(255, 255, 255, 0.03);
+      transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1);
+      color: #f0e6ff;
+      font-size: clamp(2.8rem, 8vw, 4.5rem);
+      line-height: 1;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+    }
+
+    .play-btn .material-icons {
+      font-size: inherit;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (hover: hover) {
+      .play-btn:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+        box-shadow: 0 20px 40px rgba(90, 70, 255, 0.4), 0 0 0 14px rgba(255, 255, 255, 0.06);
+        transform: scale(1.04);
+        background: rgba(40, 30, 70, 0.8);
+      }
+    }
+
+    .play-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7), 0 0 0 8px rgba(255, 255, 255, 0.05);
+      transition: all 0.1s ease;
+    }
+
+    .player-wrapper.playing .play-btn {
+      box-shadow: 0 15px 40px rgba(120, 80, 255, 0.5), 0 0 0 12px rgba(180, 140, 255, 0.15);
+      border-color: rgba(200, 170, 255, 0.5);
+    }
+
+    /* Прогресс-бар */
+    .progress-container {
+      width: 100%;
+      max-width: 85%;
+      margin: 0.8rem 0 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Стилизация ползунка */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      border: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #e0d6ff;
+      border-radius: 50%;
+      margin-top: -6px;
+      box-shadow: 0 0 12px rgba(200, 170, 255, 0.6);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    input[type="range"]::-moz-range-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: #e0d6ff;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 12px rgba(200, 170, 255, 0.6);
+      cursor: pointer;
+    }
+
+    /* Таймер обратного отсчёта */
+    .timer {
+      font-size: clamp(1.5rem, 5vw, 2.2rem);
+      font-weight: 500;
+      color: #e0d6ff;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.4rem 1.8rem;
+      border-radius: 3rem;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    @media (max-width: 480px) {
+      .player-wrapper {
+        border-radius: 2.5rem;
+        padding: 2rem 1.5rem;
+      }
+      .play-btn {
+        width: 90px;
+        height: 90px;
+        font-size: 2.8rem;
+      }
+      .timer {
+        font-size: 1.3rem;
+        padding: 0.3rem 1.4rem;
+      }
+      .progress-container {
+        max-width: 90%;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        width: 16px;
+        height: 16px;
+        margin-top: -5px;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .player-wrapper {
+        max-width: 750px;
+        padding: 4rem 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="player-wrapper" id="playerWrapper">
+    <!-- Кнопка Play/Pause -->
+    <div class="play-container">
+      <button class="play-btn" id="playPauseBtn" aria-label="Воспроизвести / Пауза">
+        <span class="material-icons" id="btnIcon">play_arrow</span>
+      </button>
+    </div>
+
+    <!-- Прогресс-бар -->
+    <div class="progress-container">
+      <input type="range" id="progressBar" min="0" max="100" value="0" step="any" aria-label="Прогресс воспроизведения">
+    </div>
+
+    <!-- Таймер обратного отсчёта -->
+    <div class="timer" id="timerDisplay">--:--</div>
+  </div>
+
+  <audio id="audioElement" preload="metadata">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    (function() {
+      'use strict';
+
+      const audio = document.getElementById('audioElement');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const btnIcon = document.getElementById('btnIcon');
+      const playerWrapper = document.getElementById('playerWrapper');
+      const timerDisplay = document.getElementById('timerDisplay');
+      const progressBar = document.getElementById('progressBar');
+
+      if (!audio || !playPauseBtn || !btnIcon || !playerWrapper || !timerDisplay || !progressBar) {
+        console.error('Не удалось найти необходимые элементы плеера.');
+        return;
+      }
+
+      let timerInterval = null;
+      let isUserDragging = false; // флаг, чтобы не обновлять ползунок во время перетаскивания
+
+      // Форматирование времени в ММ:СС (оставшееся время)
+      function formatTime(seconds) {
+        if (isNaN(seconds) || seconds === Infinity || seconds < 0) {
+          return '--:--';
+        }
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+
+      // Обновление таймера обратного отсчёта
+      function updateTimer() {
+        if (!audio.duration || isNaN(audio.duration) || audio.duration === Infinity) {
+          timerDisplay.textContent = '--:--';
+          return;
+        }
+        const remaining = audio.duration - audio.currentTime;
+        timerDisplay.textContent = formatTime(remaining);
+      }
+
+      // Обновление прогресс-бара 
+      function updateProgressBar() {
+        if (isUserDragging) return; // не мешаем пользователю
+        if (!audio.duration || isNaN(audio.duration)) {
+          progressBar.value = 0;
+          return;
+        }
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progressBar.value = percent;
+      }
+
+      // Обновление всего: таймер + прогресс
+      function updateDisplay() {
+        updateTimer();
+        updateProgressBar();
+      }
+
+      // Запуск интервала обновления
+      function startUpdates() {
+        if (timerInterval) clearInterval(timerInterval);
+        updateDisplay();
+        timerInterval = setInterval(updateDisplay, 200);
+      }
+
+      function stopUpdates() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+        updateDisplay(); // фиксируем последние значения
+      }
+
+      // Изменение времени аудио при перетаскивании ползунка
+      function seekTo(percent) {
+        if (!audio.duration || isNaN(audio.duration)) return;
+        const newTime = (percent / 100) * audio.duration;
+        audio.currentTime = newTime;
+        // После перемотки нужно обновить таймер и прогресс
+        updateDisplay();
+      }
+
+      // Обработчики событий ползунка
+      progressBar.addEventListener('input', (e) => {
+        isUserDragging = true;
+        const percent = parseFloat(e.target.value);
+
+        seekTo(percent);
+
+        updateTimer();
+      });
+
+      progressBar.addEventListener('change', (e) => {
+
+        const percent = parseFloat(e.target.value);
+        seekTo(percent);
+        isUserDragging = false;
+        updateDisplay();
+      });
+
+      function updateUI(state) {
+        const isPlaying = (state === 'playing');
+        if (isPlaying) {
+          btnIcon.textContent = 'pause';
+          playerWrapper.classList.add('playing');
+          startUpdates();
+        } else {
+          btnIcon.textContent = 'play_arrow';
+          playerWrapper.classList.remove('playing');
+          stopUpdates();
+          updateDisplay();
+        }
+      }
+
+      function togglePlay() {
+        if (audio.readyState === 0) {
+          audio.load();
+        }
+
+        if (audio.paused) {
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              updateUI('playing');
+            }).catch(error => {
+              console.warn('Ошибка воспроизведения:', error);
+              btnIcon.textContent = 'play_arrow';
+              playerWrapper.classList.remove('playing');
+              stopUpdates();
+            });
+          }
+        } else {
+          audio.pause();
+          updateUI('paused');
+        }
+      }
+
+      function onAudioEnded() {
+        btnIcon.textContent = 'play_arrow';
+        playerWrapper.classList.remove('playing');
+        stopUpdates();
+        progressBar.value = 100;
+        timerDisplay.textContent = '00:00';
+
+        setTimeout(() => {
+          if (audio.paused && audio.currentTime >= audio.duration - 0.1) {
+            if (audio.duration) {
+              timerDisplay.textContent = formatTime(audio.duration);
+              progressBar.value = 0;
+            }
+          }
+        }, 1500);
+      }
+
+      function onAudioPause() {
+        if (audio.currentTime < audio.duration && !audio.ended) {
+          updateUI('paused');
+        } else if (audio.ended) {
+          onAudioEnded();
+        }
+      }
+
+      function onAudioPlay() {
+        updateUI('playing');
+      }
+
+      function onAudioError() {
+        console.error('Ошибка загрузки аудиофайла.');
+        btnIcon.textContent = 'play_arrow';
+        playerWrapper.classList.remove('playing');
+        stopUpdates();
+        timerDisplay.textContent = '--:--';
+        progressBar.value = 0;
+      }
+
+      // Инициализация после загрузки метаданных
+      audio.addEventListener('loadedmetadata', () => {
+        if (audio.duration && !isNaN(audio.duration)) {
+          timerDisplay.textContent = formatTime(audio.duration);
+          progressBar.value = 0;
+        } else {
+          timerDisplay.textContent = '--:--';
+        }
+        progressBar.max = 100;
+      });
+
+      playPauseBtn.addEventListener('click', togglePlay);
+
+      audio.addEventListener('play', onAudioPlay);
+      audio.addEventListener('pause', onAudioPause);
+      audio.addEventListener('ended', onAudioEnded);
+      audio.addEventListener('error', onAudioError);
+
+      // Начальное состояние
+      if (audio.readyState > 0) {
+        if (!audio.paused) {
+          updateUI('playing');
+        } else {
+          updateUI('paused');
+          if (audio.duration) {
+            timerDisplay.textContent = formatTime(audio.duration);
+            progressBar.value = (audio.currentTime / audio.duration) * 100;
+          }
+        }
+      } else {
+        btnIcon.textContent = 'play_arrow';
+        playerWrapper.classList.remove('playing');
+        timerDisplay.textContent = '--:--';
+        progressBar.value = 0;
+      }
+
+      playPauseBtn.addEventListener('touchstart', (e) => {}, { passive: true });
+
+      playPauseBtn.addEventListener('keydown', (e) => {
+        if (e.key === ' ' || e.key === 'Space' || e.key === 'Enter') {
+          e.preventDefault();
+          togglePlay();
+        }
+      });
+
+      playPauseBtn.setAttribute('tabindex', '0');
+      playPauseBtn.setAttribute('role', 'button');
+      playPauseBtn.setAttribute('aria-label', 'Воспроизведение или пауза');
+    })();
+  </script>
+</body>
+</html>
